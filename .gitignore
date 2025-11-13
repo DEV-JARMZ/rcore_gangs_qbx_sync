@@ -1,0 +1,43 @@
+# =====================================================
+# FiveM / Lua resource specific ignores
+# =====================================================
+
+# Logs
+*.log
+logs/
+
+# Database backups or exports
+*.sql
+*.sqlite
+*.db
+*.bak
+
+# Temporary files / cache
+*.tmp
+cache/
+
+# =====================================================
+# OS / System files
+# =====================================================
+.DS_Store
+Thumbs.db
+
+# =====================================================
+# IDE / Editor files
+# VSCode
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim swap files
+*.swp
+
+# =====================================================
+# Node modules (if you ever use npm / resources)
+# =====================================================
+node_modules/
