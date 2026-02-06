@@ -11,6 +11,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 -- Helper Functions
 ---------------------------------------
 
+local function getNoneGangData()
+    return {
+        name = 'none',
+        label = 'No Gang',
+        grade = {
+            name = 'Unaffiliated',
+            level = 0
+        }
+    }
+end
+
 -- Sync gang in Qbox gangs table
 local function syncGangToQbox(name, tag, color, group)
     if not name then return end
@@ -97,16 +108,22 @@ local function removePlayerFromGang(src, gangName)
     local citizenid = player.PlayerData.citizenid
 
     -- Clear metadata
-    exports.qbx_core:SetPlayerData(src, "gang", nil)
+    local noneGang = getNoneGangData()
+    local noneGangJson = json.encode(noneGang)
+
+    -- Set live data
+    exports.qbx_core:SetPlayerData(src, "gang", noneGang)
+
+    -- Persist metadata
     MySQL.update.await(
-        'UPDATE players SET metadata = JSON_REMOVE(metadata, "$.gang") WHERE citizenid = ?',
-        { citizenid }
+        'UPDATE players SET metadata = JSON_SET(metadata, "$.gang", ?) WHERE citizenid = ?',
+        { noneGangJson, citizenid }
     )
 
-    -- Clear ganginfo
+    -- Persist ganginfo
     MySQL.update.await(
-        'UPDATE players SET ganginfo = NULL WHERE citizenid = ?',
-        { citizenid }
+        'UPDATE players SET ganginfo = ? WHERE citizenid = ?',
+        { noneGangJson, citizenid }
     )
 
     -- Remove from player_groups
@@ -122,10 +139,15 @@ end
 
 -- Remove offline player from gang (for kicks)
 local function removeOfflinePlayerFromGang(identifier, gangName)
-    MySQL.update.await(
-        [[UPDATE players SET metadata = JSON_REMOVE(metadata, "$.gang"), ganginfo = NULL WHERE citizenid = ? OR license = ?]],
-        { identifier, identifier }
-    )
+    local noneGangJson = json.encode(getNoneGangData())
+
+    MySQL.update.await([[
+        UPDATE players
+        SET
+            metadata = JSON_SET(metadata, "$.gang", ?),
+            ganginfo = ?
+        WHERE citizenid = ? OR license = ?
+    ]], { noneGangJson, noneGangJson, identifier, identifier })
     if gangName then
         MySQL.update.await([[
             DELETE FROM player_groups WHERE citizenid = ? AND type = 'gang' AND `group` = ?
